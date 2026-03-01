@@ -16,6 +16,7 @@ pygame.display.set_caption("Task Switching Experiment")
 FONT = pygame.font.SysFont("arial", 32)
 SMALL_FONT = pygame.font.SysFont("arial", 24)
 FONT_BOLD = pygame.font.SysFont("arial", 32, bold=True)
+SWITCH_FONT = pygame.font.SysFont("arial", 64, bold=True)  # <- bigger banner
 
 BG = (245, 245, 250)
 WHITE = (255, 255, 255)
@@ -47,12 +48,78 @@ def create_csv():
         writer.writerow([
             "trial",
             "complexity",
-            "interval",
+            "interval_length",
             "task_type",
             "actual_count",
             "user_answer",
             "correct"
         ])
+
+# -----------------------------
+# SUMMARY TRACKING OF DATA
+# -----------------------------
+summary_data = {}
+
+for c in [1, 2, 3]:
+    for t in [1, 2]:
+        summary_data[(c, t)] = {
+            "total": 0,
+            "correct": 0
+        }
+
+def write_summary_to_csv():
+    if CSV_FILE is None:
+        return
+
+    # First, read how many trials were written
+    with open(CSV_FILE, "r") as file:
+        row_count = sum(1 for _ in file)
+
+    # Now reopen in read+write mode
+    with open(CSV_FILE, "r+", newline="") as file:
+        reader = list(csv.reader(file))
+        file.seek(0)
+        writer = csv.writer(file)
+
+        # Make sure every row has enough columns (pad with blanks)
+        max_columns = 15  # ensures room for summary on right
+        padded_rows = []
+        for row in reader:
+            padded = row + [""] * (max_columns - len(row))
+            padded_rows.append(padded)
+
+        # Rewrite padded data
+        writer.writerows(padded_rows)
+
+        # Now write summary starting in column index 9 (column J visually)
+        summary_start_col = 9
+
+        # Write header row summary titles
+        padded_rows[0][summary_start_col] = "===== SUMMARY ====="
+        padded_rows[1][summary_start_col] = "Complexity"
+        padded_rows[1][summary_start_col + 1] = "Task Type"
+        padded_rows[1][summary_start_col + 2] = "Total Completed"
+        padded_rows[1][summary_start_col + 3] = "Correctly Completed"
+        padded_rows[1][summary_start_col + 4] = "Accuracy (%)"
+
+        # Fill summary rows
+        row_index = 2
+        for (c, t), values in summary_data.items():
+            total = values["total"]
+            correct = values["correct"]
+            accuracy = round((correct / total) * 100, 2) if total > 0 else 0
+
+            padded_rows[row_index][summary_start_col] = c
+            padded_rows[row_index][summary_start_col + 1] = t
+            padded_rows[row_index][summary_start_col + 2] = total
+            padded_rows[row_index][summary_start_col + 3] = correct
+            padded_rows[row_index][summary_start_col + 4] = accuracy
+
+            row_index += 1
+
+        # Rewrite everything with summary
+        file.seek(0)
+        writer.writerows(padded_rows)
 
 # -----------------------------
 # EXPERIMENT DESIGN (3x3)
@@ -96,6 +163,7 @@ STATE_RUNNING = 2
 STATE_BREAK = 3
 STATE_DONE = 4
 STATE_TUTORIAL = 5
+STATE_TUTORIAL_DONE = 6
 
 BREAK_DURATION = 10
 break_start_time = None
@@ -151,6 +219,11 @@ def log_trial(correct_flag, actual_count, user_answer):
     global tasks_completed
 
     tasks_completed += 1
+
+    # Track summary counts
+    summary_data[(complexity, task_type)]["total"] += 1
+    if correct_flag == 1:
+        summary_data[(complexity, task_type)]["correct"] += 1
 
     with open(CSV_FILE, "a", newline="") as file:
         writer = csv.writer(file)
@@ -248,6 +321,24 @@ def draw_done_screen():
     sub_surface = SMALL_FONT.render("Thank you for participating! You may close this window.", True, SUBTLE)
     sub_rect = sub_surface.get_rect(center=(WIDTH//2, HEIGHT//2 + 20))
     screen.blit(sub_surface, sub_rect)
+
+    pygame.display.flip()
+
+def draw_tutorial_done_screen():
+    screen.fill(BG)
+
+    title = SWITCH_FONT.render("Tutorial Completed", True, ACCENT)
+    screen.blit(title, title.get_rect(center=(WIDTH//2, 180)))
+
+    ready_text = FONT.render("You are now ready.", True, BLACK)
+    screen.blit(ready_text, ready_text.get_rect(center=(WIDTH//2, 260)))
+
+    instruction = SMALL_FONT.render(
+        "Press Space Bar to return home",
+        True,
+        SUBTLE
+    )
+    screen.blit(instruction, instruction.get_rect(center=(WIDTH//2, 320)))
 
     pygame.display.flip()
 
@@ -422,7 +513,7 @@ def draw_interface(duration):
     # -----------------------------
     if task_type == 1:
         instruction_surface = FONT.render(
-            "Count how many times target digits appear:",
+            "Count digits in the target set:",
             True,
             BLACK
         )
@@ -499,7 +590,7 @@ def draw_interface(duration):
     # TASK-SWITCH BANNER
     # -----------------------------
     if time.time() - switch_banner_time < SWITCH_BANNER_DURATION:
-        banner_surface = FONT_BOLD.render("TASK SWITCH!", True, ACCENT)
+        banner_surface = SWITCH_FONT.render("TASK SWITCH!", True, ACCENT)
         banner_rect = banner_surface.get_rect(center=(WIDTH//2, 300 + Y_OFFSET))
         screen.blit(banner_surface, banner_rect)
 
@@ -542,6 +633,7 @@ while running:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                write_summary_to_csv()
                 running = False
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -569,6 +661,7 @@ while running:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                write_summary_to_csv()
                 running = False
 
     # ============================
@@ -590,6 +683,7 @@ while running:
             current_condition_index += 1
 
             if current_condition_index >= len(conditions):
+                write_summary_to_csv()
                 game_state = STATE_DONE
             else:
                 game_state = STATE_BREAK
@@ -599,6 +693,7 @@ while running:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
+                write_summary_to_csv()
                 running = False
 
             elif event.type == pygame.KEYDOWN:
@@ -646,6 +741,7 @@ while running:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                write_summary_to_csv()
                 running = False
 
     # ============================
@@ -657,6 +753,7 @@ while running:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                write_summary_to_csv()
                 running = False
 
     # ============================
@@ -692,9 +789,8 @@ while running:
                             tutorial_input = ""
                             tutorial_feedback = ""
                             if tutorial_step >= 4:
-                                # Tutorial done, return to start
                                 task_type = 1
-                                game_state = STATE_START
+                                game_state = STATE_TUTORIAL_DONE
                     else:
                         if event.key == pygame.K_RETURN:
                             if tutorial_input != "":
@@ -715,5 +811,23 @@ while running:
 
                         elif event.unicode.isdigit():
                             tutorial_input += event.unicode
+
+    # ============================
+    # TUTORIAL COMPLETE SCREEN
+    # ============================
+    elif game_state == STATE_TUTORIAL_DONE:
+
+        draw_tutorial_done_screen()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    tutorial_step = 0
+                    tutorial_input = ""
+                    tutorial_feedback = ""
+                    game_state = STATE_START
 
 pygame.quit()
