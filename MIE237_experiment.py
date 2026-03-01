@@ -30,11 +30,13 @@ clock = pygame.time.Clock()
 # -----------------------------
 import os # Change file to work directory 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SESSION_DIR = os.path.join(BASE_DIR, "session_data")
+os.makedirs(SESSION_DIR, exist_ok=True)
 
 import datetime # Make a new file each time. Do not overwrite files
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 filename = f"results_{timestamp}.csv"
-CSV_FILE = os.path.join(BASE_DIR, filename)
+CSV_FILE = os.path.join(SESSION_DIR, filename)
 
 with open(CSV_FILE, "w", newline="") as file:
     writer = csv.writer(file)
@@ -43,6 +45,8 @@ with open(CSV_FILE, "w", newline="") as file:
         "complexity",
         "interval",
         "task_type",
+        "actual_count",
+        "user_answer",
         "correct"
     ])
 
@@ -120,7 +124,7 @@ def compute_answer():
         total_targets = sum(digit_string.count(str(d)) for d in target_digits)
         return len(digit_string) - total_targets
     
-def log_trial(correct_flag):
+def log_trial(correct_flag, actual_count, user_answer):
     global tasks_completed
 
     tasks_completed += 1
@@ -132,6 +136,8 @@ def log_trial(correct_flag):
             complexity,
             duration,
             task_type,
+            actual_count,
+            user_answer,
             correct_flag
         ])
 
@@ -209,10 +215,11 @@ def draw_start_screen():
 
     # Instructions
     lines = [
-        "You will switch between 2 tasks and type your answer into a box:",
+        "You will switch between 2 tasks:",
         "Task 1: Count total occurrences of specified target digits in a string",
         "Task 2: Count total occurrences of target digits NOT specified in a string",
         "Goal: Complete a task as many times as possible within an interval.",
+        "Type your answer and press ENTER to submit."
     ]
 
     for i, line in enumerate(lines):
@@ -221,7 +228,7 @@ def draw_start_screen():
         screen.blit(line_surface, line_rect)
 
     # Start Button
-    button_rect = pygame.Rect(WIDTH//2 - 100, 320, 200, 60)
+    button_rect = pygame.Rect(WIDTH//2 - 100, 400, 200, 60)
     pygame.draw.rect(screen, GREEN, button_rect)
 
     button_text = FONT.render("START", True, WHITE)
@@ -436,7 +443,7 @@ while running:
                             response = -999
 
                         correct_flag = 1 if response == correct_answer else 0
-                        log_trial(correct_flag)
+                        log_trial(correct_flag, correct_answer, response)
 
                         generate_trial(complexity)
                         user_input = ""
