@@ -4,12 +4,12 @@ Group: Gabriel Faustino, Sunny Wu, Ben Zhou
 
 ## Overview
 
-This project is a **Task-Switching Experiment** built with Pygame. Participants alternate between two counting tasks under varying complexity and switching intervals, following a 3×3 factorial design.
+**Task-Switching Experiment** built with Pygame. Participants alternate between two counting tasks under varying complexity and switching intervals, following a 3×3 factorial design.
 
 ## Tasks
 
-- **Task 1** — Count how many times the specified target digits appear in a 10-digit string.
-- **Task 2** — Count how many digits are **not** in the target set (i.e., 10 minus the target count).
+- **Task 1** — Count total occurences of a specified set of digits in a 10-digit string.
+- **Task 2** — Count total occurences of digits **not** in the specified set.
 
 ## Experiment Design
 
@@ -29,13 +29,6 @@ python MIE237_experiment.py
 ```
 
 **Requirements:** Python 3, Pygame (`pip install pygame`)
-
-## Features
-
-- Interactive **tutorial** mode accessible from the start screen.
-- **Block progress indicator** showing current block out of 9.
-- **Task-switch banner** when switching between tasks mid-block.
-- **Completion screen** at the end of the experiment.
 
 ## Data Output
 
