@@ -355,6 +355,7 @@ def draw_start_screen():
         "You will switch between 2 tasks:",
         "Task 1: Count total occurrences of specified digits in a string",
         "Task 2: Count total occurrences of digits NOT specified in a string",
+        "Each string is always 10 digits long.",
         "Goal: Complete the task correctly as many times as possible.",
         "Type your answer and press ENTER to submit."
     ]
@@ -394,6 +395,7 @@ def draw_tutorial():
 
         lines = [
             "You will see a string of digits and a set of target digits.",
+            "Each string is always exactly 10 digits long.",
             "Count how many times any of the target digits appear in the string.",
             "Example: String = 3 8 1 4 3 2 7 1 9 0   Targets: {1, 3}",
             "Answer: 4  (two 3s and two 1s)",
@@ -410,6 +412,7 @@ def draw_tutorial():
 
         lines = [
             "This time, count the digits NOT in the target set.",
+            "Remember: each string is always exactly 10 digits long.",
             "Tip: count the targets and subtract from 10.",
             "Example: String = 3 8 1 4 3 2 7 1 9 0   Targets: {1, 3}",
             "Answer: 6  (10 total minus 4 targets)",
@@ -655,6 +658,7 @@ while running:
         draw_countdown()
 
         if current_time - countdown_start_time >= 5:
+            task_type = 1  # always start each block with the count task
             game_state = STATE_RUNNING
             condition_start_time = time.time()
             last_switch_time = time.time()
@@ -731,6 +735,7 @@ while running:
         if current_time - break_start_time >= BREAK_DURATION:
 
             complexity, duration = conditions[current_condition_index]
+            task_type = 1  # always start each block with the count task
             generate_trial(complexity)
 
             condition_start_time = time.time()
