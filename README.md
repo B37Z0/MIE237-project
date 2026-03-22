@@ -6,6 +6,8 @@ Group: Gabriel Faustino, Sunny Wu, Ben Zhou
 
 **Task-Switching Experiment** built with Pygame. Participants alternate between two counting tasks under varying complexity and switching intervals, following a 3×3 factorial design.
 
+*Note: Upon attempting the 'game' it is likely you identify several UX flaws. Although there are reasonably simple fixes, they have been intentionally left in to ensure consistency across the collected data - it has been determined the flaws do not significantly interfere with the results and metrics that will be analyzed.*
+
 ## Tasks
 
 - **Task 1** — Count total occurences of a specified set of digits in a 10-digit string.
