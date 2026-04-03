@@ -46,6 +46,23 @@ Results are saved to `session_data/` as timestamped CSV files (`results_YYYYMMDD
 | `user_answer` | Participant's response |
 | `correct` | 1 if correct, 0 if incorrect |
 
+## Aggregate Accuracy
+
+To combine all participant result files in a folder into one CSV with
+`participant, complexity, interval_length, accuracy`, run:
+
+```bash
+python aggregate_accuracy.py session_data participant_accuracy.csv
+```
+
+The output `participant` column is assigned as an integer starting from `1`.
+Files are ordered by the date and time embedded in the filename
+(`results_YYYYMMDD_HHMMSS.csv`), so the earliest file is assigned participant `1`,
+the next earliest is `2`, and so on.
+
+The output `complexity` column converts the recorded numeric levels as follows:
+`1` becomes `Easy`, `2` becomes `Medium`, and `3` becomes `Hard`.
+
 ## Project Structure
 
 ```
