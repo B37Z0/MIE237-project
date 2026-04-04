@@ -6,7 +6,7 @@ library(emmeans)
 within_2f <- read_csv("participant_accuracy.csv")
 
 # Convert to categorical variables
-within_2f <- data %>%
+within_2f <- within_2f %>%
   mutate(
     participant = factor(participant),
     complexity = factor(complexity,
@@ -29,21 +29,52 @@ ggplot(within_2f, aes(x = participant, y = tasks_completed)) +
   labs( x = "Participant" ,
         y = "Number of Task Completed" )
 
-# Check interaction effects between complexity and interval_length on accuracy
+# CHECK INTERACTION EFFECTS (accuracy)
 accuracy_blocked <- aov(accuracy~complexity*interval_length + participant, 
                         data=within_2f)
 summary(accuracy_blocked) 
-# no interaction effect between complexity and interval length on number
-# of tasks completed -> main effects
+# Square root transformation (addresses unequal variance)
+# test if significant values in ANOVA results in original and sqrt transform correspond 
+accuracy_blocked_sqrt <- aov(sqrt(accuracy)~complexity*interval_length + participant, 
+                             data=within_2f)
+summary(accuracy_blocked_sqrt) 
+# SIGNIFICANT VALUES IN ORIGINAL AND SQRT TRANSFORMATION CORRESPOND:
+# MORE CONFIDENT THAT VALUES IN THE ORIGINAL ARE VALID
+# no interaction effect between complexity and interval length on accuracy -> main effects
 
-# Check interaction effects between complexity and interval_length on number of
-# tasks completed
+# CHECK INTERACTION EFFECTS (# completed tasks)
 tasks_completed_blocked <- aov(tasks_completed~complexity*interval_length + participant, 
                         data=within_2f)
 summary(tasks_completed_blocked) 
-# no interaction effect between complexity and interval length on 
-# number of task completed -> main effects
+# Square root transformation (addresses unequal variance)
+# test if significant values in ANOVA results in original and sqrt transform correspond 
+tasks_completed_blocked_sqrt <- aov(sqrt(tasks_completed)~complexity*interval_length + participant, 
+                             data=within_2f)
+summary(tasks_completed_blocked) 
+# SIGNIFICANT VALUES IN ORIGINAL AND SQRT TRANSFORMATION CORRESPOND:
+# MORE CONFIDENT THAT VALUES IN THE ORIGINAL ARE VALID
+# no interaction effect between complexity and interval length on # tasks completed -> main effects
 
+# Run diagnostic plots to test ANOVA
+par(mfrow = c(2,2))
+plot(accuracy_blocked)
+# Residuals vs Fitted: slight curvature, linearity may be violated
+# Q-Q Residuals: points fit along line, normality holds
+# Scale-Location: most points form a horizontal band, variance is constant
+# Residuals vs Leverage: no outliers so no influential points
+par(mfrow = c(2,2))
+plot(accuracy_blocked_sqrt) # sqrt fixes variance
+
+par(mfrow = c(2,2))
+plot(tasks_completed_blocked)
+# Residuals vs Fitted: curve shape --> non-linearity
+# Q-Q Residuals: points fit along line, normality holds
+# Scale-Location: variance is fairly equal
+# Residuals vs Leverage: no outliers so no influential points
+par(mfrow = c(2,2))
+plot(tasks_completed_blocked_sqrt) # sqrt fixes variance and normality (mostly)
+
+# INTERPRET COEFFICIENTS AS USUAL
 # Main effect - complexity
 complexity_main <- emmeans(accuracy_blocked, ~ complexity)
 complexity_main
@@ -61,18 +92,5 @@ summary(lm(accuracy ~ complexity * interval_length + participant, data = within_
 # Regression on tasks completed
 summary(lm(tasks_completed ~ complexity * interval_length + participant, data = within_2f))
 
-# Run diagnostic plots
-par(mfrow = c(2,2))
-plot(accuracy_blocked)
-# Residuals vs Fitted: slight curvature, linearity may be violated
-# Q-Q Residuals: points fit along line, normality holds
-# Scale-Location: most points form a horizontal band, variance is constant
-# Residuals vs Leverage: no outliers so no influential points
 
-par(mfrow = c(2,2))
-plot(tasks_completed_blocked)
-# Residuals vs Fitted: slight curvature, linearity may be violated
-# Q-Q Residuals: points fit along line, normality holds
-# Scale-Location: most points form a horizontal band, variance is constant
-# Residuals vs Leverage: no outliers so no influential points
 
