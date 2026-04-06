@@ -29,61 +29,78 @@ ggplot(within_2f, aes(x = participant, y = tasks_completed)) +
   labs( x = "Participant" ,
         y = "Number of Task Completed" )
 
+# Interaction Plot, parallel lines indicate no significant interaction
+# interval_length
+ggplot(within_2f, aes(x = interval_length, y = accuracy, color = complexity, group = complexity)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  theme_minimal()
+
+# complexity
+ggplot(within_2f, aes(x = interval_length, y = tasks_completed, color = complexity, group = complexity)) +
+  stat_summary(fun = mean, geom = "line") +
+  stat_summary(fun = mean, geom = "point") +
+  theme_minimal()
+
+# CHECK PARTICIPANT BASELINE DIFFERENCES
+# Accuracy
+within_2f <- within_2f %>%
+  group_by(participant) %>%
+  mutate(
+    accuracy_minmax = ifelse(
+      max(accuracy, na.rm = TRUE) == min(accuracy, na.rm = TRUE),
+      0,
+      (accuracy - min(accuracy, na.rm = TRUE)) /
+        (max(accuracy, na.rm = TRUE) - min(accuracy, na.rm = TRUE))
+    )
+  ) %>%
+  ungroup()
+
+participant_diff_accuracy <- aov(((accuracy)) ~ participant, data = within_2f)
+summary(participant_diff_accuracy)
+par(mfrow = c(2,2))
+plot(participant_diff_accuracy)
+
+# Tasks Completed
+participant_diff_tasks_completed <- aov(sqrt(tasks_completed) ~ participant, data = within_2f)
+summary(participant_diff_tasks_completed)
+par(mfrow = c(2,2))
+plot(participant_diff_tasks_completed)
+
+
 # CHECK INTERACTION EFFECTS (accuracy)
 accuracy_blocked <- aov(accuracy~complexity*interval_length + participant, 
                         data=within_2f)
 summary(accuracy_blocked) 
-# Square root transformation (addresses unequal variance)
-# test if significant values in ANOVA results in original and sqrt transform correspond 
-accuracy_blocked_sqrt <- aov(sqrt(accuracy)~complexity*interval_length + participant, 
-                             data=within_2f)
-summary(accuracy_blocked_sqrt) 
-# SIGNIFICANT VALUES IN ORIGINAL AND SQRT TRANSFORMATION CORRESPOND:
-# MORE CONFIDENT THAT VALUES IN THE ORIGINAL ARE VALID
-# no interaction effect between complexity and interval length on accuracy -> main effects
+# Diagnostic
+par(mfrow = c(2,2))
+plot(accuracy_blocked)
 
 # CHECK INTERACTION EFFECTS (# completed tasks)
 tasks_completed_blocked <- aov(tasks_completed~complexity*interval_length + participant, 
                         data=within_2f)
 summary(tasks_completed_blocked) 
+par(mfrow = c(2,2))
+plot(tasks_completed_blocked)
 # Square root transformation (addresses unequal variance)
 # test if significant values in ANOVA results in original and sqrt transform correspond 
 tasks_completed_blocked_sqrt <- aov(sqrt(tasks_completed)~complexity*interval_length + participant, 
                              data=within_2f)
-summary(tasks_completed_blocked) 
-# SIGNIFICANT VALUES IN ORIGINAL AND SQRT TRANSFORMATION CORRESPOND:
-# MORE CONFIDENT THAT VALUES IN THE ORIGINAL ARE VALID
-# no interaction effect between complexity and interval length on # tasks completed -> main effects
-
-# Run diagnostic plots to test ANOVA
-par(mfrow = c(2,2))
-plot(accuracy_blocked)
-# Residuals vs Fitted: slight curvature, linearity may be violated
-# Q-Q Residuals: points fit along line, normality holds
-# Scale-Location: most points form a horizontal band, variance is constant
-# Residuals vs Leverage: no outliers so no influential points
-par(mfrow = c(2,2))
-plot(accuracy_blocked_sqrt) # sqrt fixes variance
-
-par(mfrow = c(2,2))
-plot(tasks_completed_blocked)
-# Residuals vs Fitted: curve shape --> non-linearity
-# Q-Q Residuals: points fit along line, normality holds
-# Scale-Location: variance is fairly equal
-# Residuals vs Leverage: no outliers so no influential points
+summary(tasks_completed_blocked_sqrt) 
 par(mfrow = c(2,2))
 plot(tasks_completed_blocked_sqrt) # sqrt fixes variance and normality (mostly)
 
-# INTERPRET COEFFICIENTS AS USUAL
 # Main effect - complexity
 complexity_main <- emmeans(accuracy_blocked, ~ complexity)
-complexity_main
+pairs(complexity_main, adjust = "tukey")
+complexity_main <- emmeans(tasks_completed_blocked, ~ complexity)
 pairs(complexity_main, adjust = "tukey")
 # All complexity pairs are significant
 
 # Main effect - interval_length
 interval_length_main <- emmeans(accuracy_blocked, ~ interval_length)
-interval_length_main
+pairs(interval_length_main, adjust = "tukey")
+interval_length_main <- emmeans(tasks_completed_blocked, ~ interval_length)
 pairs(interval_length_main, adjust = "tukey")
 # interval_length 20 and 30 are not significant
 
@@ -91,6 +108,4 @@ pairs(interval_length_main, adjust = "tukey")
 summary(lm(accuracy ~ complexity * interval_length + participant, data = within_2f))
 # Regression on tasks completed
 summary(lm(tasks_completed ~ complexity * interval_length + participant, data = within_2f))
-
-
 
