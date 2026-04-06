@@ -44,19 +44,7 @@ ggplot(within_2f, aes(x = interval_length, y = tasks_completed, color = complexi
 
 # CHECK PARTICIPANT BASELINE DIFFERENCES
 # Accuracy
-within_2f <- within_2f %>%
-  group_by(participant) %>%
-  mutate(
-    accuracy_minmax = ifelse(
-      max(accuracy, na.rm = TRUE) == min(accuracy, na.rm = TRUE),
-      0,
-      (accuracy - min(accuracy, na.rm = TRUE)) /
-        (max(accuracy, na.rm = TRUE) - min(accuracy, na.rm = TRUE))
-    )
-  ) %>%
-  ungroup()
-
-participant_diff_accuracy <- aov(((accuracy)) ~ participant, data = within_2f)
+participant_diff_accuracy <- aov(asin(sqrt(accuracy)) ~ participant, data = within_2f)
 summary(participant_diff_accuracy)
 par(mfrow = c(2,2))
 plot(participant_diff_accuracy)
@@ -103,9 +91,4 @@ pairs(interval_length_main, adjust = "tukey")
 interval_length_main <- emmeans(tasks_completed_blocked, ~ interval_length)
 pairs(interval_length_main, adjust = "tukey")
 # interval_length 20 and 30 are not significant
-
-# Regression on accuracy
-summary(lm(accuracy ~ complexity * interval_length + participant, data = within_2f))
-# Regression on tasks completed
-summary(lm(tasks_completed ~ complexity * interval_length + participant, data = within_2f))
 
