@@ -27,10 +27,9 @@ ggplot(within_2f, aes(x = participant, y = tasks_completed)) +
   geom_boxplot() +
   theme_minimal() +
   labs( x = "Participant" ,
-        y = "Number of Task Completed" )
+        y = "Number of Tasks Completed" )
 
-# Interaction Plot, parallel lines indicate no significant interaction
-# interval_length
+# Interaction plot: roughly parallel lines may suggest little interaction, to be confirmed by ANOVA
 ggplot(within_2f, aes(x = interval_length, y = accuracy, color = complexity, group = complexity)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point") +
@@ -42,20 +41,6 @@ ggplot(within_2f, aes(x = interval_length, y = tasks_completed, color = complexi
   stat_summary(fun = mean, geom = "point") +
   theme_minimal()
 
-# CHECK PARTICIPANT BASELINE DIFFERENCES
-# Accuracy
-participant_diff_accuracy <- aov(asin(sqrt(accuracy)) ~ participant, data = within_2f)
-summary(participant_diff_accuracy)
-par(mfrow = c(2,2))
-plot(participant_diff_accuracy)
-
-# Tasks Completed
-participant_diff_tasks_completed <- aov(sqrt(tasks_completed) ~ participant, data = within_2f)
-summary(participant_diff_tasks_completed)
-par(mfrow = c(2,2))
-plot(participant_diff_tasks_completed)
-
-
 # CHECK INTERACTION EFFECTS (accuracy)
 accuracy_blocked <- aov(accuracy~complexity*interval_length + participant, 
                         data=within_2f)
@@ -63,6 +48,18 @@ summary(accuracy_blocked)
 # Diagnostic
 par(mfrow = c(2,2))
 plot(accuracy_blocked)
+# Sqrt
+accuracy_blockedsqrt <- aov(sqrt(accuracy)~complexity*interval_length + participant, 
+                        data=within_2f)
+summary(accuracy_blockedsqrt) 
+par(mfrow = c(2,2))
+plot(accuracy_blockedsqrt)
+# Log
+accuracy_blockedlog <- aov(log(accuracy)~complexity*interval_length + participant, 
+                            data=within_2f)
+summary(accuracy_blockedlog)
+par(mfrow = c(2,2))
+plot(accuracy_blockedlog)
 
 # CHECK INTERACTION EFFECTS (# completed tasks)
 tasks_completed_blocked <- aov(tasks_completed~complexity*interval_length + participant, 
@@ -70,13 +67,18 @@ tasks_completed_blocked <- aov(tasks_completed~complexity*interval_length + part
 summary(tasks_completed_blocked) 
 par(mfrow = c(2,2))
 plot(tasks_completed_blocked)
-# Square root transformation (addresses unequal variance)
-# test if significant values in ANOVA results in original and sqrt transform correspond 
-tasks_completed_blocked_sqrt <- aov(sqrt(tasks_completed)~complexity*interval_length + participant, 
+# Sqrt
+tasks_completed_blockedsqrt <- aov(sqrt(tasks_completed)~complexity*interval_length + participant, 
                              data=within_2f)
-summary(tasks_completed_blocked_sqrt) 
+summary(tasks_completed_blockedsqrt) 
 par(mfrow = c(2,2))
-plot(tasks_completed_blocked_sqrt) # sqrt fixes variance and normality (mostly)
+plot(tasks_completed_blockedsqrt)
+# Log
+tasks_completed_blockedlog <- aov(log(tasks_completed)~complexity*interval_length + participant, 
+                                    data=within_2f)
+summary(tasks_completed_blockedlog) 
+par(mfrow = c(2,2))
+plot(tasks_completed_blockedlog)
 
 # Main effect - complexity
 complexity_main <- emmeans(accuracy_blocked, ~ complexity)
